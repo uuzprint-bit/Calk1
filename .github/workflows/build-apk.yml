@@ -1,4 +1,4 @@
-name: Build UzPrint APK
+name: Build UZPRINT APK
 
 on:
   push:
@@ -8,269 +8,64 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK
-        run: |
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
-      - name: Setup Gradle
+      - name: Install SDK
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - name: Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
-
-      - name: Create Android project
+          gradle-version: '8.9'
+      - name: Create project
         run: |
-          mkdir -p app/src/main/java/uz/uzprint/calculator
-          mkdir -p app/src/main/assets
-
+          mkdir -p app/src/main/java/uz/uzprint/calculator app/src/main/assets
           cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-
-          rootProject.name = "UzPrintCalculator"
-          include(":app")
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name='UZPRINT'; include ':app'
           EOF
-
           cat > build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application' version '8.5.2' apply false
-          }
+          plugins { id 'com.android.application' version '8.5.2' apply false }
           EOF
-
           cat > app/build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application'
-          }
-
-          android {
-              namespace 'uz.uzprint.calculator'
-              compileSdk 35
-
-              defaultConfig {
-                  applicationId "uz.uzprint.calculator"
-                  minSdk 23
-                  targetSdk 35
-                  versionCode 1
-                  versionName "1.0"
-              }
+          plugins { id 'com.android.application' }
+          android { namespace 'uz.uzprint.calculator'; compileSdk 35
+            defaultConfig { applicationId 'uz.uzprint.calculator'; minSdk 23; targetSdk 35; versionCode 1; versionName '1.0' }
           }
           EOF
-
           cat > app/src/main/AndroidManifest.xml <<'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-              <application
-                  android:allowBackup="true"
-                  android:label="UzPrint Kalkulyator"
-                  android:theme="@android:style/Theme.Material.Light.NoActionBar">
-
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true">
-
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-
-                  </activity>
-              </application>
-
-          </manifest>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:theme="@android:style/Theme.Material.Light.NoActionBar" android:label="UZPRINT Kalkulyator"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity></application></manifest>
           EOF
-
           cat > app/src/main/java/uz/uzprint/calculator/MainActivity.java <<'EOF'
           package uz.uzprint.calculator;
-
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.webkit.WebSettings;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
-
-          public class MainActivity extends Activity {
-
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-
-                  WebView webView = new WebView(this);
-                  setContentView(webView);
-
-                  WebSettings settings = webView.getSettings();
-                  settings.setJavaScriptEnabled(true);
-                  settings.setDomStorageEnabled(true);
-
-                  webView.setWebViewClient(new WebViewClient());
-                  webView.loadUrl("file:///android_asset/index.html");
-              }
-          }
+          import android.app.Activity;import android.os.Bundle;import android.webkit.WebView;import android.webkit.WebViewClient;
+          public class MainActivity extends Activity{public void onCreate(Bundle b){super.onCreate(b);WebView w=new WebView(this);setContentView(w);w.getSettings().setJavaScriptEnabled(true);w.setWebViewClient(new WebViewClient());w.loadUrl("file:///android_asset/index.html");}}
           EOF
-
           cat > app/src/main/assets/index.html <<'EOF'
-          <!DOCTYPE html>
-          <html lang="uz">
-          <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width,initial-scale=1">
-          <title>UzPrint Kalkulyator</title>
-
-          <style>
-          *{box-sizing:border-box}
-          body{
-            margin:0;
-            font-family:Arial,sans-serif;
-            background:#0f172a;
-            color:#fff;
-            padding:15px
-          }
-          h1{text-align:center;font-size:25px}
-          .card{
-            background:#1e293b;
-            padding:15px;
-            border-radius:16px;
-            margin-bottom:14px
-          }
-          label{
-            display:block;
-            margin-top:12px;
-            margin-bottom:5px;
-            color:#cbd5e1
-          }
-          input{
-            width:100%;
-            padding:13px;
-            font-size:17px;
-            border:1px solid #475569;
-            border-radius:10px;
-            background:#0f172a;
-            color:white
-          }
-          .row{
-            display:flex;
-            justify-content:space-between;
-            gap:10px;
-            padding:10px 0;
-            border-bottom:1px solid #334155
-          }
-          .big{
-            font-size:20px;
-            font-weight:bold;
-            color:#86efac
-          }
-          .montaj{color:#fde68a}
-          button{
-            width:100%;
-            padding:14px;
-            border:0;
-            border-radius:12px;
-            font-size:17px;
-            font-weight:bold;
-            background:#22c55e;
-            color:#052e16
-          }
-          </style>
-          </head>
-
-          <body>
-
-          <h1>UZPRINT</h1>
-
-          <div class="card">
-            <label>Banner eni (m)</label>
-            <input id="w" type="number" value="3">
-
-            <label>Banner bo‘yi (m)</label>
-            <input id="h" type="number" value="4">
-
-            <label>Banner narxi — 1 m²</label>
-            <input id="bp" type="number" value="25000">
-
-            <label>↔ Ichki gorizontal reyka soni</label>
-            <input id="gh" type="number" value="0">
-
-            <label>↕ Ichki vertikal reyka soni</label>
-            <input id="gv" type="number" value="0">
-
-            <label>3×4 reyka narxi — 1 metr</label>
-            <input id="r34" type="number" value="10000">
-
-            <label>3×2 reyka narxi — 1 metr</label>
-            <input id="r32" type="number" value="8000">
-          </div>
-
-          <div class="card">
-            <div class="row">
-              <span>Banner maydoni</span>
-              <b id="area">0</b>
-            </div>
-
-            <div class="row">
-              <span>Reyka jami metri</span>
-              <b id="rails">0</b>
-            </div>
-
-            <div class="row">
-              <span>Banner jami</span>
-              <b id="banner">0</b>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>3×4 REYKA</h3>
-
-            <div class="row">
-              <span>Reyka</span>
-              <b id="rail34"></b>
-            </div>
-
-            <div class="row">
-              <span>Banner + reyka</span>
-              <b id="total34"></b>
-            </div>
-
-            <div class="row montaj">
-              <span>G‘ijduvon montaj</span>
-              <b id="montaj34"></b>
-            </div>
-
-            <div class="row big">
-              <span>JAMI + MONTAJ</span>
-              <b id="final34"></b>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>3×2 REYKA</h3>
-
-            <div class="row">
-              <span>Reyka</span>
-              <b id="rail32"></b>
-            </
+          <!doctype html><html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>UZPRINT</title><style>
+          *{box-sizing:border-box}body{margin:0;padding:16px;background:#0f172a;color:#fff;font-family:Arial}.card{background:#1e293b;padding:16px;border-radius:16px;margin:12px 0}h1{text-align:center;color:#86efac}label{display:block;color:#cbd5e1;margin-top:10px}input{width:100%;padding:12px;margin-top:5px;background:#0f172a;color:#fff;border:1px solid #475569;border-radius:9px;font-size:17px}.row{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #334155}.total{font-size:19px;color:#86efac}.mount{color:#fde68a}button{width:100%;padding:14px;background:#22c55e;border:0;border-radius:10px;font-weight:bold;font-size:17px}
+          </style></head><body><h1>UZPRINT</h1><div class="card">
+          <label>Banner eni (m)</label><input id="w" type="number" value="3" step="0.01"><label>Banner bo‘yi (m)</label><input id="h" type="number" value="4" step="0.01"><label>Banner narxi — 1 m²</label><input id="bp" type="number" value="25000"><label>↔ Ichki gorizontal reyka soni</label><input id="gh" type="number" value="0"><label>↕ Ichki vertikal reyka soni</label><input id="gv" type="number" value="0"><label>3×4 reyka — 1 metr</label><input id="r34" type="number" value="10000"><label>3×2 reyka — 1 metr</label><input id="r32" type="number" value="8000"></div>
+          <div class="card"><div class="row"><span>Banner maydoni</span><b id="area"></b></div><div class="row"><span>Reyka jami metri</span><b id="rails"></b></div><div class="row"><span>Banner jami</span><b id="banner"></b></div></div>
+          <div class="card"><h3>3×4 REYKA</h3><div class="row"><span>Reyka</span><b id="rail34"></b></div><div class="row"><span>Banner + reyka</span><b id="total34"></b></div><div class="row mount"><span>G‘ijduvon montaj</span><b id="montaj34"></b></div><div class="row total"><span>JAMI + MONTAJ</span><b id="final34"></b></div></div>
+          <div class="card"><h3>3×2 REYKA</h3><div class="row"><span>Reyka</span><b id="rail32"></b></div><div class="row"><span>Banner + reyka</span><b id="total32"></b></div><div class="row mount"><span>G‘ijduvon montaj</span><b id="montaj32"></b></div><div class="row total"><span>JAMI + MONTAJ</span><b id="final32"></b></div></div><button id="calc">HISOBLASH</button>
+          <script>function n(i){return Number(document.getElementById(i).value)||0}function s(v){return Math.round(v).toLocaleString('ru-RU')+' so‘m'}function c(){let w=n('w'),h=n('h'),a=w*h,r=2*(w+h)+n('gh')*w+n('gv')*h,b=a*n('bp'),x=r*n('r34'),y=r*n('r32'),m=a*15000;area.textContent=a.toFixed(2)+' m²';rails.textContent=r.toFixed(2)+' m';banner.textContent=s(b);rail34.textContent=s(x);total34.textContent=s(b+x);montaj34.textContent=s(m);final34.textContent=s(b+x+m);rail32.textContent=s(y);total32.textContent=s(b+y);montaj32.textContent=s(m);final32.textContent=s(b+y+m)}document.querySelectorAll('input').forEach(e=>e.oninput=c);calc.onclick=c;c()</script></body></html>
+          EOF
+      - name: Build APK
+        run: gradle assembleDebug --stacktrace
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk UZPRINT-Kalkulyator.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: UZPRINT-Kalkulyator-APK
+          path: UZPRINT-Kalkulyator.apk
+          if-no-files-found: error
